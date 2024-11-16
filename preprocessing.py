@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load data
-text_df = pd.read_csv('[DEIDENTIFIED]OACIS_RadiologyReport_20241024.csv')
-label_df = pd.read_csv('Osteosarc Rad Report Data Oct 7th.csv')
+text_df = pd.read_csv('data/[DEIDENTIFIED]OACIS_RadiologyReport_20241024.csv')
+label_df = pd.read_csv('data/Osteosarc Rad Report Data Oct 7th.csv')
 
 # Select specific columns
 text_df = text_df[['MRN', 'ServDescription', 'ReportDate', 'ReportText']].dropna()
