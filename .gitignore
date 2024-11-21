@@ -1,5 +1,6 @@
 # ignore sensitive data
 data/*
+LLM/data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
