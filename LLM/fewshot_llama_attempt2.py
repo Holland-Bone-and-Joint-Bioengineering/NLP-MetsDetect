@@ -30,14 +30,24 @@ tokenizer = LlamaTokenizerFast.from_pretrained(model_name) #, cache_dir=cache_di
 model = LlamaForCausalLM.from_pretrained(model_name, device_map="auto") #, cache_dir=cache_dir)
 
 # Few-shot examples
-few_shot_examples = """
+few_shot_examples_FRACS = """
 Does this radiology report text indicate fracture and/or metastases? Provide an answer using the example output format below.
 - Example Input: "PROVIDED HISTORY: "NONE, Prostate ca. follow-up after SBRT to oligomets ???Please do RECIST 1.1 and PCWG3 for PR.20 study (TIMEPOINT-4FINDINGS: Skeletal phase whole body planar and tomographic imaging of the thorax/abdomen/pelvis/proximal femurs demonstrate stable scislightly less conspicuous tracer activity within the mid thoracic spine. Otherwise, there is no scintigraphic abnormality suspicious ocorresponding to insufficiency fractures on recent MRI. There is degenerative-appearing uptake within the left lower cervical spine, s[DEIDENTIFIED - DOCTOR'S INFO]ence for disease progression as per PCWG-3."
-- Example Output: "Metastases: Yes Fracture: Yes"
+- Example Output: "Fracture: Yes"
 
 Does this radiology report text indicate fracture and/or metastases? 
 - Example Input: "Provided History: "T2b (MR nodule centrally 1.7cm) G6 19.6 DT1.6y velocity 7.2 /yr. Pt on Abiraterone+/-Ipateserib. Please compare ALLFindings: Angiographic and tissue phase imaging of the torso is unremarkable. Skeletal phase whole body planar images and SPECT of thedegenerative-appearing uptake within the right a.c. joint, right L4/L5 facet joint, knees and forefeet. Stable mild diffuse tracer act[DEIDENTIFIED - DOCTOR'S INFO]ence for bony metastatic disease.remote trauma."
-- Example Output: "Metastases: No Fracture: No"
+- Example Output: "Fracture: No"
+"""
+
+few_shot_examples_METS = """
+Does this radiology report text indicate fracture and/or metastases? Provide an answer using the example output format below.
+- Example Input: "PROVIDED HISTORY: "NONE, Prostate ca. follow-up after SBRT to oligomets ???Please do RECIST 1.1 and PCWG3 for PR.20 study (TIMEPOINT-4FINDINGS: Skeletal phase whole body planar and tomographic imaging of the thorax/abdomen/pelvis/proximal femurs demonstrate stable scislightly less conspicuous tracer activity within the mid thoracic spine. Otherwise, there is no scintigraphic abnormality suspicious ocorresponding to insufficiency fractures on recent MRI. There is degenerative-appearing uptake within the left lower cervical spine, s[DEIDENTIFIED - DOCTOR'S INFO]ence for disease progression as per PCWG-3."
+- Example Output: "Metastases: Yes"
+
+Does this radiology report text indicate fracture and/or metastases? 
+- Example Input: "Provided History: "T2b (MR nodule centrally 1.7cm) G6 19.6 DT1.6y velocity 7.2 /yr. Pt on Abiraterone+/-Ipateserib. Please compare ALLFindings: Angiographic and tissue phase imaging of the torso is unremarkable. Skeletal phase whole body planar images and SPECT of thedegenerative-appearing uptake within the right a.c. joint, right L4/L5 facet joint, knees and forefeet. Stable mild diffuse tracer act[DEIDENTIFIED - DOCTOR'S INFO]ence for bony metastatic disease.remote trauma."
+- Example Output: "Metastases: No"
 """
 
 # Define prediction function
@@ -73,11 +83,15 @@ grouped_reports['image_ct___1'] = grouped_reports['image_ct___1'].astype(int)
 grouped_reports['image_ct___2'] = grouped_reports['image_ct___2'].astype(int)
 
 texts = grouped_reports['combined_reports'].tolist()
-labels = grouped_reports[['image_ct___1', 'image_ct___2']].values.tolist()
 
+labels_frac = grouped_reports['image_ct___1'].values.tolist()
+labels_mets = grouped_reports['image_ct___2'].values.tolist()
+
+
+############### CLASSIFYING FRACTURES ##################
 # Split into train/test sets (optional, if not already split)
 train_texts, test_texts, train_labels, test_labels = train_test_split(
-    texts, labels, test_size=0.2, random_state=42
+    texts, labels_frac, test_size=0.2, random_state=42
 )
 
 # use the first train data text and the second train data text for the instructions
@@ -89,7 +103,6 @@ example2_label = train_labels[1]
 
 
 
-
 # Generate predictions for the test set
 print("Generating predictions...")
 predictions = []
@@ -98,7 +111,7 @@ true_labels = []
 i = 0
 for report, label in zip(test_texts, test_labels):
     print("Prediction: " + str(i))
-    prediction = predict_label_llama(report, few_shot_examples, model, tokenizer)
+    prediction = predict_label_llama(report, few_shot_examples_FRACS, model, tokenizer)
     predictions.append(prediction)
     true_labels.append(label)
     print("\nPredictions: " + str(predictions))
@@ -119,7 +132,73 @@ valid_true_labels = true_labels[valid_indices]
 # Evaluate metrics
 print("Evaluating performance...")
 accuracy = accuracy_score(valid_true_labels, valid_predictions)
-f1 = f1_score(valid_true_labels, valid_predictions, average="binary")  # Adjust as needed
+f1 = f1_score(valid_true_labels, valid_predictions, average="binary")
+
+# Per-label accuracy
+unique_labels = np.unique(valid_true_labels)
+per_label_accuracy = {
+    label: accuracy_score(
+        valid_true_labels[valid_true_labels == label],
+        valid_predictions[valid_true_labels == label],
+    )
+    for label in unique_labels
+}
+
+# Print results
+print(f"Overall Accuracy: {accuracy:.4f}")
+print(f"F1 Score: {f1:.4f}")
+for label, acc in per_label_accuracy.items():
+    label_name = "Metastases" if label == 1 else "Fracture"
+    print(f"Accuracy for {label_name}: {acc:.4f}")
+
+
+
+############### CLASSIFYING METASTASES ##################
+
+# Split into train/test sets (optional, if not already split)
+train_texts, test_texts, train_labels, test_labels = train_test_split(
+    texts, labels_mets, test_size=0.2, random_state=42
+)
+
+# use the first train data text and the second train data text for the instructions
+example1 = train_texts[0]
+example1_label = train_labels[0]
+
+example2 = train_texts[1]
+example2_label = train_labels[1]
+
+
+
+# Generate predictions for the test set
+print("Generating predictions...")
+predictions = []
+true_labels = []
+
+i = 0
+for report, label in zip(test_texts, test_labels):
+    print("Prediction: " + str(i))
+    prediction = predict_label_llama(report, few_shot_examples_METS, model, tokenizer)
+    predictions.append(prediction)
+    true_labels.append(label)
+    print("\nPredictions: " + str(predictions))
+    print("\nTrue labels: " + str(true_labels))
+    i = i + 1
+    if (i == 3):
+        break
+
+# Convert lists to arrays
+predictions = np.array(predictions)
+true_labels = np.array(true_labels)
+
+# Filter out invalid predictions (-1)
+valid_indices = predictions != -1
+valid_predictions = predictions[valid_indices]
+valid_true_labels = true_labels[valid_indices]
+
+# Evaluate metrics
+print("Evaluating performance...")
+accuracy = accuracy_score(valid_true_labels, valid_predictions)
+f1 = f1_score(valid_true_labels, valid_predictions, average="binary")
 
 # Per-label accuracy
 unique_labels = np.unique(valid_true_labels)
