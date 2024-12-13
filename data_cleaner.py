@@ -156,8 +156,8 @@ class DataCleaner:
 
 if __name__ == "__main__":
     data_cleaner = DataCleaner(
-        text_file = 'data/[DEIDENTIFIED]OACIS_RadiologyReport_20241024.csv'
-        label_file = 'data/Osteosarc Rad Report Data Oct 7th.csv'
+        text_file='data/[DEIDENTIFIED]OACIS_RadiologyReport_20241024.csv',
+        label_file='data/Osteosarc Rad Report Data Oct 7th.csv'
     )
     data_cleaner.load_data()
     data_cleaner.preprocess_reports()
