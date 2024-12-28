@@ -150,9 +150,6 @@ true_labels = []
 print("Total examples:", len(test_texts))
 i = 0
 for report, label in zip(test_texts, test_labels):
-    if i < 10:
-        i += 1
-        continue
     print("Prediction: " + str(i))
     prediction = predict_label_lama(report)
     predictions.append(prediction)
