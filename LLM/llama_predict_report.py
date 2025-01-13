@@ -1,8 +1,4 @@
-import numpy as np
-import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score
 import transformers
-from sklearn.model_selection import train_test_split
 import torch
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -172,77 +168,112 @@ def predict_label_lama(report):
 
     return res
 
-# Load labeled data
-print("Loading labeled data...")
-grouped_reports = pd.read_csv('../../LLM/labeled_data_combined_reports.csv')
-# grouped_reports = pd.read_csv('../../LLM/labeled_data.csv')
 
-grouped_reports['image_ct___1'] = pd.to_numeric(grouped_reports['image_ct___1'], errors='coerce')
-grouped_reports['image_ct___2'] = pd.to_numeric(grouped_reports['image_ct___2'], errors='coerce')
+if __name__ == "__main__":
+#     report = """
+# Bone Scan Whole Body+Extra Views+Flow TECHNETIUM MDP BONE SCAN WHOLE BODY:
 
-grouped_reports = grouped_reports.replace([float('inf'), float('-inf')], pd.NA).dropna(subset=['image_ct___1', 'image_ct___2'])
+# Preliminary flow study of the pelvis demonstrates asymmetry in the
+# flow to the legs with more flow to the right leg compared to the
+# left this is often due to altered weight bearing.
 
-grouped_reports['image_ct___1'] = grouped_reports['image_ct___1'].astype(int)
-grouped_reports['image_ct___2'] = grouped_reports['image_ct___2'].astype(int)
+# Static whole body images demonstrate mild increased activity at
+# T8-T9, the patellofemoral joints and the left first MTP joint in
+# keeping with arthritis. The findings are stable when compared
+# with bone scans as far back as 12/19/06.
 
-texts = grouped_reports['combined_reports'].tolist()
+# No scintigraphic evidence of bony metastasis is seen.
 
-labels = grouped_reports[['image_ct___1', 'image_ct___2']].values.tolist()
+# [DEIDENTIFIED - DOCTOR'S INFO]
+# """
+#     frac, met = predict_label_lama(report)
+#     actual_f, actual_m = 0, 0
+#     print(f"Predicted - fracture: {frac}, metastases: {met}")
+#     print(f"Actual - fracture: {actual_f}, metastases: {actual_m}")
 
-# Split into train/test sets (optional, if not already split)
-train_texts, test_texts, train_labels, test_labels = train_test_split(
-    texts, labels, test_size=0.2, random_state=42
-)
+
+    report = """
+Abdomen + Pelvis CT without oral C+ CT ABDOMEN AND PELVIS:
+
+Clinical history: Prostate cancer and bone metastases. Chemotherapy for one week PTA. Now with fever and lower abdominal pain query neutropenic colitis.
+
+Comparison exam:None available.
+
+Axial volumetric CT images were obtained from above the level of the diaphragms to below the level of the ischial tuberosities following the use of intravenous and oral contrast with 5 mm slice thickness.
+
+Findings:
+
+There is significant thickening of the sigmoid colon with a defect demonstrated along the posterior aspect of the sigmoid wall which leads into a region of fatty stranding and extraluminal gas consistent with a perforated diverticulitis. No abscess
+appreciated.
+Multiple sigmoid colon diverticuli are noted. No evidence of bowel obstruction.
+
+There is fatty infiltration of the colon seen most conspicuously within the ascending, transverse, and descending portions. This is nonspecific but can be seen in the context of past inflammatory bowel disease.
+
+The stomach and small bowel are unremarkable.
+
+Hypodensity within segment 4B liver measuring 0.8 cm in size is most likely a cyst.
+The spleen and biliary tree are unremarkable.
+The gallbladder has been removed.
+
+The adrenal glands and kidneys are unremarkable.
+
+Bladder appears mildly thickened but is incompletely distended.
+
+Multiple para-aortic lymph nodes are seen none of which meet CT criteria for pathologic enlargement. Largest measures 0.9 cm.
+
+Fat-containing umbilical hernia. Right-sided inguinal hernia repair noted.
+
+Suspected metastatic disease to the bones demonstrated on prior bone scan is not well seen on today's study. There is a small sclerotic focus noted in the left iliac crest (image 89) which may correlate with the nuclear medicine bone scan of January
+28, 2016.
+ Compression fracture of T12 noted. Endplate fractures of L2 and L3 also demonstrated. There are degenerative changes of the lumbar spine.
+
+IMPRESSION:
+
+Findings in keeping with sigmoid diverticulitis with a small focal perforation. No associated abscess.
 
 
-# Generate predictions for the test set
-print("Generating predictions...")
-predictions = []
-true_labels = []
+_____________
 
-print("Total examples:", len(test_texts))
-i = 0
-for report, label in zip(test_texts, test_labels):
-    print("Report length:", len(report))
-    # Truncate if necessary
-    MAX_LEN = 10000
-    if len(report) > MAX_LEN:
-        report = report[len(report)-MAX_LEN:]
-    print("Prediction: " + str(i))
-    prediction = predict_label_lama(report)
-    predictions.append(prediction)
-    true_labels.append(label)
-    print("\nPredictions: " + str(predictions))
-    print("\nTrue labels: " + str(true_labels))
-    i = i + 1
+[DEIDENTIFIED - DOCTOR'S INFO]
 
-# Convert lists to arrays
-predictions = np.array(predictions)
-true_labels = np.array(true_labels)
+[DEIDENTIFIED - DOCTOR'S INFO]
+Report from 2016-04-25 00:00:00: Abdomen + Pelvis CT with oral C+ CT ABDOMEN PELVIS (ENHANCED)
 
-# Filter out invalid predictions (-1)
-valid_indices = predictions != -1
-valid_predictions = predictions[valid_indices]
-valid_true_labels = true_labels[valid_indices]
+HISTORY: 56 yo Male. prostate - high risk, likely M1. cT3b, gleason 10 (11/11 cores), widespread bone mets - ad re-staging following initiation of ADT and 6xdocetaxel chemotherapy before consideration of radiotherapy
 
-# Evaluate metrics
-print("Evaluating performance...")
-accuracy = accuracy_score(valid_true_labels, valid_predictions)
-f1 = f1_score(valid_true_labels, valid_predictions, average="binary")  # Adjust as needed
+COMPARISON: whole-body bone scan dated August 18, 2016. CT dated April 25, 2016.
 
-# Per-label accuracy
-unique_labels = np.unique(valid_true_labels)
-per_label_accuracy = {
-    label: accuracy_score(
-        valid_true_labels[valid_true_labels == label],
-        valid_predictions[valid_true_labels == label],
-    )
-    for label in unique_labels
-}
+TECHNIQUE: CT images of the abdomen and pelvis with oral and intravenous contrast.
 
-# Print results
-print(f"Overall Accuracy: {accuracy:.4f}")
-print(f"F1 Score: {f1:.4f}")
-for label, acc in per_label_accuracy.items():
-    label_name = "Metastases" if label == 1 else "Fracture"
-    print(f"Accuracy for {label_name}: {acc:.4f}")
+FINDINGS:  Prostate not particularly enlarged by CT, measuring 3.4 cm (previous 3.5 cm). No gross abnormality of the prostate by CT. No evidence for involvement of adjacent structures.
+
+Stable mild bladder wall thickening. No hydronephrosis or hydroureter.
+
+No enlarged lymph nodes. No ascites. No peritoneal deposit.
+
+Stable appearance to the bones, including metastatic involvement of the left iliac crest.
+
+No evidence of liver metastases. Stable hypodensity in the liver segment 4B. Cholecystectomy.
+
+Evolution of the previous acute sigmoid diverticulitis. Small focus of contained extraluminal gas again present, now better circumscribed, measuring (image 125) 2.3 cm (previous 2.5 cm). The position of this contained gas has shifted slightly, and
+is now intimately associated with the bladder wall. No evidence for fistula to the bladder lumen. Associated inflammatory fat stranding is similar to slightly decreased.
+
+Sigmoid wall thickening seen in this region, likely related to be diverticulitis; correlation with non-urgent colonoscopy recommended once the patient's acute condition has resolved.
+
+No other change.
+
+CT chest reported separately.
+
+SUMMARY:
+
+Stable bony metastatic disease.
+
+Evolution of the acute sigmoid diverticulitis, as described above. Slight improvement is seen, however the change is quite minimal considering it has been approximately a 5 month since the prior study. Clinical correlation required.
+
+Sigmoid wall thickening, likely related to the diverticulitis; correlation with non-urgent colonoscopy recommended once the patient's acute condition has resolved.
+"""
+
+    frac, met = predict_label_lama(report)
+    actual_f, actual_m = 0, 1
+    print(f"Predicted - fracture: {frac}, metastases: {met}")
+    print(f"Actual - fracture: {actual_f}, metastases: {actual_m}")
