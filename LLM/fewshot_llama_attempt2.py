@@ -56,7 +56,7 @@ def predict_label_llama(report, few_shot_examples, model, tokenizer):
     inputs = tokenizer(prompt, return_tensors="pt")
     outputs = model.generate(
         inputs["input_ids"].to("cuda"),
-        max_length=20000,
+        max_length=2000,
         temperature=0.7,
         top_p=0.9,
         do_sample=True,
@@ -110,6 +110,9 @@ true_labels = []
 
 i = 0
 for report, label in zip(test_texts, test_labels):
+    if len(report.split()) > 500:
+        print("too long..")
+        continue
     print("Prediction: " + str(i))
     prediction = predict_label_llama(report, few_shot_examples_FRACS, model, tokenizer)
     predictions.append(prediction)
