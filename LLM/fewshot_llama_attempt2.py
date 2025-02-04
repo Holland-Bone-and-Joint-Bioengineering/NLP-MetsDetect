@@ -120,8 +120,6 @@ for report, label in zip(test_texts, test_labels):
     print("\nPredictions: " + str(predictions))
     print("\nTrue labels: " + str(true_labels))
     i = i + 1
-    if (i == 3):
-        break
 
 # Convert lists to arrays
 predictions = np.array(predictions)
