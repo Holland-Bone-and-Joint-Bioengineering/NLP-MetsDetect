@@ -1,6 +1,8 @@
 import transformers
 import torch
 import os
+import pandas as pd 
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 # Load the model and tokenizer
@@ -167,6 +169,51 @@ def predict_label_lama(report):
             res.append(-1)
 
     return res
+
+
+def process_report_csv(csv_file_name):
+    # print("Loading labeled data...")
+    # grouped_reports = pd.read_csv(csv_file_name)
+
+    # grouped_reports['image_ct___1'] = pd.to_numeric(grouped_reports['image_ct___1'], errors='coerce')
+    # grouped_reports['image_ct___2'] = pd.to_numeric(grouped_reports['image_ct___2'], errors='coerce')
+
+    # grouped_reports['image_ct___1'] = grouped_reports['image_ct___1'].astype(int)
+    # grouped_reports['image_ct___2'] = grouped_reports['image_ct___2'].astype(int)
+
+    # texts = grouped_reports['combined_reports'].tolist()
+    # labels = grouped_reports[['image_ct___1', 'image_ct___2']].values.tolist()
+
+    # return texts, labels
+
+    # load data in df format
+    df_reports = pd.read_csv(csv_file_name)
+
+    df_reports["report_and_frac_label"] = (
+        "Report:\n" + 
+        df_reports["combined_reports"] + 
+        "\n\nFracture classification:\n" + 
+        df_reports["image_ct___1"]
+        # df_reports["image_ct___1"].apply(lambda x: "Positive" if float(x) > 0 else "Negative")
+    )
+
+    df_reports["report_and_mets_label"] = (
+        "Report:\n" + 
+        df_reports["combined_reports"] + 
+        "\n\nMetastases classification:\n" + 
+        df_reports["image_ct___1"]
+        # df_reports["image_ct___2"].apply(lambda x: "Positive" if float(x) > 0 else "Negative")
+    )
+
+    # drop reports that have NaN in reports column
+    df_reports = df_reports.dropna(subset=["report_and_frac_label", "report_and_mets_label"])
+
+    texts = df_reports['combined_reports'].tolist()
+    frac_labels = df_reports['image_ct___1'].astype(float).round().astype(int).values.tolist()
+    mets_labels = df_reports['image_ct___2'].astype(float).round().astype(int).values.tolist()
+
+    return texts, frac_labels, mets_labels
+
 
 
 if __name__ == "__main__":
@@ -378,7 +425,13 @@ _____________
 
 [DEIDENTIFIED - DOCTOR'S INFO]"
 """
-    frac, met = predict_label_lama(report)
-    actual_f, actual_m = 0, 1
-    print(f"Predicted - fracture: {frac}, metastases: {met}")
-    print(f"Actual - fracture: {actual_f}, metastases: {actual_m}")
+
+    texts, frac_labels, mets_labels = process_report_csv('data/labeled_data_combined_reports.csv')
+
+    i = 0
+    for report, label_frac, label_met in zip(texts, frac_labels, mets_labels):
+        print(f"\nPredicting report {i}")
+        frac, met = predict_label_lama(report)
+        print(f"Predicted - fracture: {frac}, metastases: {met}")
+        print(f"Actual - fracture: {label_frac}, metastases: {label_met}")
+        i += 1
