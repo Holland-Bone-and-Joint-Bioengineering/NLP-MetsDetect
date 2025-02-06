@@ -2,7 +2,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 
-grouped_reports = pd.read_csv('labeled_data.csv')  # Replace with the correct path
+grouped_reports = pd.read_csv('labeled_data.csv')
 texts = grouped_reports['reports'].tolist()
 labels = grouped_reports[['image_ct___1', 'image_ct___2']].astype(int).values.tolist()
 
