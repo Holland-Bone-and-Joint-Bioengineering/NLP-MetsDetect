@@ -2,12 +2,15 @@ import transformers
 import torch
 import os
 import pandas as pd 
+import csv
+import time
+from datetime import datetime
 
 from few_shot_examples import ex3, ex4, ex2_met, fracture_examples, metastases_examples
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-def load_model()
+def load_model():
     # Load the model and tokenizer
     print("Loading model ...")
 
@@ -102,10 +105,25 @@ if __name__ == "__main__":
 
     texts, frac_labels, mets_labels = process_report_csv('data/labeled_data_combined_reports.csv')
 
-    i = 0
-    for report, label_frac, label_met in zip(texts, frac_labels, mets_labels):
-        print(f"\nPredicting report {i}")
-        frac, met = predict_label_lama(pipeline, report)
-        print(f"Predicted - fracture: {frac}, metastases: {met}")
-        print(f"Actual - fracture: {label_frac}, metastases: {label_met}")
-        i += 1
+    timestamp = datetime.now().strftime('%Y-%m-%d-%Hh-%Mm')
+
+    csv_filename = f"results/test_{timestamp}.csv"
+    with open(csv_filename, mode='w', newline='') as file:
+        print(f"Writing to {csv_filename}")
+        writer = csv.writer(file)
+        
+        # write headers
+        writer.writerow(['Predicted_frac', 'Predicted_mets', 'Actual_frac', 'Actual_mets'])
+        
+        i = 0
+        for report, label_frac, label_met in zip(texts, frac_labels, mets_labels):
+            print(f"\nPredicting report {i}")
+            i += 1
+            
+            frac, met = predict_label_lama(pipeline, report)
+            print(f"Predicted - fracture: {frac}, metastases: {met}")
+            print(f"Actual - fracture: {label_frac}, metastases: {label_met}")
+            
+            # write to csv
+            writer.writerow([frac, met, label_frac, label_met])
+            
