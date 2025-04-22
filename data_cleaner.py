@@ -127,16 +127,20 @@ class DataCleaner:
                 score2 = assessment_row['image_ct___2']
                 study_uid = assessment_row['study_uid']
                 
-                # Filter reports within the specified date range
-                reports_in_range = patient_reports[
+                # Always include report with matching studyinstanceuid
+                report_for_study = patient_reports[
+                    patient_reports['studyinstanceuid'] == study_uid
+                ]
+
+                # Also include reports in the date range
+                reports_by_date = patient_reports[
                     (patient_reports['ReportDate'] >= previous_assessment_date) &
                     (patient_reports['ReportDate'] <= current_assessment_date)
                 ]
-                #If no reports in specified date range, fall back on using study id to get report 
-                if reports_in_range.empty:
-                    reports_in_range = patient_reports[
-                        patient_reports['studyinstanceuid'] == study_uid
-                    ]
+
+                # Combine and drop duplicates (just in case the same report is selected twice)
+                reports_in_range = pd.concat([report_for_study, reports_by_date]).drop_duplicates(subset=['studyinstanceuid'])
+
 
                 print(f"Reports in range: {reports_in_range['ReportDate'].tolist()}")
 
