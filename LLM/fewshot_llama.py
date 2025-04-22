@@ -124,18 +124,6 @@ grouped_reports = pd.read_csv('/home/salnassa/capstone/data/grouped_test.csv')  
 texts = grouped_reports['reports'].tolist()
 labels = grouped_reports[['image_ct___1', 'image_ct___2']].astype(int).values.tolist()
 
-# Split into train/test sets (optional, if not already split)
-#train_texts, test_texts, train_labels, test_labels = train_test_split(
-    #texts, labels, test_size=0.2, random_state=42
-#)
-
-# use the first train data text and the second train data text for the instructions
-#example1 = train_texts[0]
-#example1_label = train_labels[0]
-
-#example2 = train_texts[1]
-#example2_label = train_labels[1]
-
 # Generate predictions for the test set
 print("Generating predictions...")
 predictions = []
@@ -200,37 +188,3 @@ evaluate_task(frac_true,frac_pred)
 
 print("Evaluating performance Mets...")
 evaluate_task(mets_true, mets_pred)
-
-
-
-
-
-
-'''
-# Filter out invalid predictions (-1)
-valid_indices = predictions != -1
-valid_predictions = predictions[valid_indices]
-valid_true_labels = true_labels[valid_indices]
-
-# Evaluate metrics
-print("Evaluating performance...")
-accuracy = accuracy_score(valid_true_labels, valid_predictions)
-f1 = f1_score(valid_true_labels, valid_predictions, average="binary")  # Adjust as needed
-
-# Per-label accuracy
-unique_labels = np.unique(valid_true_labels)
-per_label_accuracy = {
-    label: accuracy_score(
-        valid_true_labels[valid_true_labels == label],
-        valid_predictions[valid_true_labels == label],
-    )
-    for label in unique_labels
-}
-
-# Print results
-print(f"Overall Accuracy: {accuracy:.4f}")
-print(f"F1 Score: {f1:.4f}")
-for label, acc in per_label_accuracy.items():
-    label_name = "Metastases" if label == 1 else "Fracture"
-    print(f"Accuracy for {label_name}: {acc:.4f}")
-'''
