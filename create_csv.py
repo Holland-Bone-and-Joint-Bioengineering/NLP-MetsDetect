@@ -79,6 +79,33 @@ def create_labeled_data(DB_PARAMS):
     smr.l5 IS NOT null
     """
 
+    '''
+    QUERY FOR ALL BIOMARKER LABELS TO CREATE WHOLE SET:
+    
+    query = """
+    SELECT 
+    b.patient_uid,
+    b.study_date,
+    b.study_uid,
+    r.reporttext,
+    smr.l1,
+    smr.l2,
+    smr.l3,
+    smr.l4,
+    smr.l5,
+    smr.l1_frac,
+    smr.l2_frac,
+    smr.l3_frac,
+    smr.l4_frac,
+    smr.l5_frac
+    FROM biomarkers_data_final b
+    LEFT JOIN studies s ON b.study_uid = s.studyinstanceuid
+    LEFT JOIN oacis_radiologyreport r ON r.studyinstanceuid = s.studyinstanceuid
+    LEFT JOIN scan_manual_review smr ON b.study_uid = smr.study_uid
+    WHERE r.reporttext is not null 
+    """
+    '''
+
     df = pd.read_sql_query(query, conn)
     print(f"loaded labeled data ")
     cols_to_check_mets = ['l1', 'l2', 'l3', 'l4', 'l5']
