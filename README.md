@@ -2,10 +2,10 @@
 
 
 ## How to use Llama pipeline
-1) Run `data\create_csv.py` to generate rad_reports and labeled data csvs
-2) Run `data_cleaner.py` using rad reports and labeled data csvs to create final grouped csv
-3) Pass the final grouped csv into `fewshot_llama.py` 
-4) Use resultant csv
+1) Run `LLM\create_csv.py` to generate rad_reports and labeled data csvs
+2) Run `LLM\data_cleaner.py` using rad reports and labeled data csvs to create final grouped csv
+3) Pass the final grouped csv into `LLM\fewshot_llama.py` 
+4) Use resultant csv in classifier or analysis 
 
 ## Description of Files
 - `create_csv.py`: contains code to create dataframes with reports and labels
